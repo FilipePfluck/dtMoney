@@ -2,11 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { UseTransaction } from '../../contexts/TransactionsContext'
 
-import {create, color, Scrollbar} from "@amcharts/amcharts4/core"
-import {LineSeries, DateAxis, ValueAxis, XYChart, CircleBullet, XYCursor} from "@amcharts/amcharts4/charts"
+import { isBefore, eachDayOfInterval, isSameDay } from 'date-fns'
 
-import { isBefore, eachDayOfInterval, isEqual, isSameDay } from 'date-fns'
-
+import ApexChart from 'react-apexcharts'
 
 import * as S from './styles'
 
@@ -19,13 +17,9 @@ interface Transaction {
     createdAt: string
 }
 
-interface CartItemsAmount {
-    [key: number]: number;
-  }
-
 interface ChartItem {
-    Date: Date
-    Balance: number
+    x: Date
+    y: number
 }
 
 const Chart = () => {
@@ -47,6 +41,68 @@ const Chart = () => {
     },[])
 
     const [chartData, setChartData] = useState<ChartItem[]>([])
+    
+    const options = {
+
+        chart: {
+            toolbar: {
+                show: false
+            },
+            zoom: {
+                enable: false
+            },
+            foreColor: '#989898'
+        },
+        grid: {
+            show: false
+        },
+        dataLabels: {
+            enabled: false
+        },
+        tooltip: {
+            custom: function({series, seriesIndex, dataPointIndex, w}: any) {
+              return (
+                '<div style="padding: 16px; border-radius: 4px; background-color: #2D3138; border: 0">' +
+                '<span>' + series[seriesIndex][dataPointIndex] + '</span>' +
+                '</div>'
+              )
+            },
+            marker: {
+                show: false
+            }
+        },
+
+        stroke: {
+            colors: ['#33CD95']
+        },
+        xaxis: {
+            type: 'datetime',
+            axisBorder: {
+                color: '#A9A9A9'
+            },
+            axisTicks: {
+                color: '#A9A9A9'
+            },
+
+        },
+        yAxis:{
+            min: 0
+        },
+        fill: {
+            opacity: 0.3,
+            type: 'gradient',
+            gradient: {
+                shade: 'dark',
+                opacityFrom: 0.7,
+                opacityTo: 0.3,
+            },
+            colors: ['#33CD95']
+        }
+    }
+
+    const series = [
+        { name: 'Saldo em função do tempo', data: chartData}
+    ]
 
     useEffect(()=>{
         if(!transactions[0]){
@@ -74,8 +130,8 @@ const Chart = () => {
             //Se não houver retorna o valor que já tinha
             if(!transactionsInDay[0]){
                 return {
-                    "Date": day,
-                    "Balance": sum
+                    x: day,
+                    y: sum
                 }
             }
 
@@ -91,57 +147,23 @@ const Chart = () => {
             sum = value
 
             return {
-                "Date": day,
-                "Balance": value
+                x: day,
+                y: value
             }
         })
 
         setChartData(serializedChartData)
     },[transactions])
 
-    let chart = create("chartdiv", XYChart)
-    
-    chart.dateFormatter.inputDateFormat = "i"
-    //A linha acima faz o grafico entender o formato 2020-06-20T22:14:28.007Z 
-    //mais informações em: https://www.amcharts.com/docs/v4/concepts/formatters/formatting-date-time/
-
-    chart.data = chartData
-    
-    let dateAxis = chart.xAxes.push(new DateAxis())
-    dateAxis.baseInterval = {
-        "timeUnit": "day",
-        "count": 1
-    }
-
-    let valueAxis = chart.yAxes.push(new ValueAxis())
-    
-    let series = chart.series.push(new LineSeries())
-        
-    series.dataFields.dateX = "Date"
-    series.dataFields.valueY = "Balance"
-
-    let bullet = series.bullets.push(new CircleBullet())
-    series.strokeWidth = 2
-    series.stroke = color("#33CD95")
-    series.fill = color("#33CD95")
-
-    chart.stroke = color("#cdcdcd")
-    chart.fill = color("#cdcdcd")
-    chart.strokeWidth = 1.75
-    
-    series.dataFields.dateX = "Date"
-    series.dataFields.valueY = "Balance"
-
-    bullet.tooltipText = "Saldo: {Balance} \n Data: {Date}"
-        
-    chart.cursor = new XYCursor();
-    chart.cursor.snapToSeries = series;
-    chart.cursor.xAxis = dateAxis;
-
-    //chart.scrollbarX = new Scrollbar();
-
     return(
-        <S.Container id="chartdiv"/>
+        <S.Container>
+            <ApexChart
+                type="area" 
+                height="100%" 
+                options={options} 
+                series={series}
+            />
+        </S.Container>
     )
 }
 

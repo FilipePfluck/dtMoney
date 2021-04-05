@@ -6,5 +6,12 @@ export const Container = styled.div`
     margin-top: 40px;
     padding: 24px;
     color: #fff;
-    min-height: 400px;
+    height: 400px;
+`
+
+export const Tooltip = styled.div`
+    padding: 16px;
+    border-radius: 4px;
+    background-color: #2D3138;
+    
 `
